@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "payload": "None"
+  },
+  {
+    "id": 2,
+    "payload": "Test data"
+  },
+  {
+    "id": 3,
+    "payload":
+    {
+      "priority": 1,
+      "class": "Warning",
+      "time": 876812,
+      "msg": "Коллоквиум по Django на листочке(((((((("
+    }
+  }
+]
