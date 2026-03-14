@@ -2,10 +2,15 @@ import pytest
 from src.logging_tools.log_manager import LoggingManager
 from src.classes.validator import TaskSourceValidator
 from src.classes.task import Task
+from src.cli import ConsoleInterface
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_logging():
     LoggingManager.setup()
+
+@pytest.fixture
+def cli():
+    return ConsoleInterface()
 
 class ValidSource:
     def get_tasks(self):
