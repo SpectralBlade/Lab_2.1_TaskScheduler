@@ -1,17 +1,23 @@
 from src.logging_tools.log_manager import LoggingManager
 from src.classes.validator import TaskSourceValidator
-from examples.examples import EXAMPLE_SOURCES
+from examples.examples import SOURCES
 
 def main() -> None:
+    """
+    Точка входа в приложение. Выполняет инициализацию логов,
+    валидацию источников из примера и запуск сбора задач. (планируется еще интерактив
+    с взаимодействием с данными)
+    :return: Данная функция ничего не возвращает
+    """
     LoggingManager.setup()
 
     LoggingManager.logger.info("Application started. Preparing to validate sources...")
 
     validator = TaskSourceValidator()
 
-    LoggingManager.logger.info(f"Found {len(EXAMPLE_SOURCES)} sources in configuration. Starting validation...")
+    LoggingManager.logger.info(f"Found {len(SOURCES)} sources in configuration. Starting validation...")
 
-    for source in EXAMPLE_SOURCES:
+    for source in SOURCES:
         validator.verify(source)
 
     if not validator.validated_sources:

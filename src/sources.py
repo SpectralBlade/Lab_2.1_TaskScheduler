@@ -5,11 +5,22 @@ from src.logging_tools.log_manager import LoggingManager
 
 
 class GeneratorSource:
+    """
+    Источник задач, генерирующий данные случайным образом в заданном количестве.
+    """
     def __init__(self, count: int):
+        """
+        Инициализирует генератор задач.
+        :param count: Количество задач, которые необходимо создать.
+        """
         self.count = count
 
     @LoggingManager.log_task_sources
     def get_tasks(self) -> Iterator[Task]:
+        """
+        Генерирует итератор объектов Task со случайными данными.
+        :return: Итератор, возвращающий объекты Task.
+        """
         for _ in range(self.count):
             task_id = f'Task_{_}'
             task_payload = {
@@ -22,11 +33,22 @@ class GeneratorSource:
 
 
 class FileSource:
+    """
+    Источник задач, считывающий данные из JSON-файла.
+    """
     def __init__(self, path: str):
+        """
+        Инициализирует файловый источник.
+        :param path: Путь к JSON-файлу с данными задач.
+        """
         self.path = path
 
     @LoggingManager.log_task_sources
     def get_tasks(self) -> list[Task]:
+        """
+        Считывает список задач из файла и преобразует их в объекты Task.
+        :return: Список объектов Task (пустой список в случае ошибки чтения).
+        """
         tasks = []
         try:
             with open(self.path, "r") as file:
@@ -39,7 +61,15 @@ class FileSource:
 
 
 class ApiSource:
+    """
+    Источник задач, имитирующий получение данных через внешний API.
+    """
     def __init__(self, endpoint: str, retries: int):
+        """
+        Инициализирует бутафорный API-источник.
+        :param endpoint: URL-адрес конечной точки API.
+        :param retries: Количество попыток повторного подключения.
+        """
         self.endpoint = endpoint
         self.retries = retries
         self.server_data = [
@@ -49,10 +79,18 @@ class ApiSource:
         ]
 
     def simulate_server_delay(self):
+        """
+        Имитирует сетевую задержку при обращении к серверу.
+        :return: Данная функция ничего не возвращает.
+        """
         time.sleep(random.uniform(0.2, 1.5))
 
     @LoggingManager.log_task_sources
     def get_tasks(self) -> list[Task]:
+        """
+        Запрашивает данные из имитированного API и преобразует их в список задач.
+        :return: Список полученных объектов Task.
+        """
         LoggingManager.logger.info(f'Sending API request to {self.endpoint}...')
         self.simulate_server_delay()
 

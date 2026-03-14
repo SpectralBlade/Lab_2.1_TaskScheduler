@@ -15,7 +15,6 @@ class InvalidSource:
     def some_other_method(self):
         pass
 
-
 @pytest.fixture
 def validator() -> TaskSourceValidator:
     return TaskSourceValidator()
