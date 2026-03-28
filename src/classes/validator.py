@@ -40,6 +40,6 @@ class TaskSourceValidator:
         LoggingManager.logger.info(f"Source returned {len(tasks)} tasks:")
 
         for task in tasks:
-            LoggingManager.logger.info(f"  -> [Task ID: {task.id}] Payload: {task.payload}")
+            LoggingManager.logger.info(f"  -> {task.summary} | Payload: {task.payload}")
 
         return tasks

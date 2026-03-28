@@ -27,7 +27,7 @@ def validator() -> TaskSourceValidator:
 
 @pytest.fixture
 def sample_task() -> Task:
-    return Task(id="test-123", payload={"info": "test data"})
+    return Task(id="test-123", description="I really love Python and Samir Ahmed!", payload={"info": "test data"})
 
 
 @pytest.fixture

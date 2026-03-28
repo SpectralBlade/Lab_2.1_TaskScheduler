@@ -21,15 +21,24 @@ class GeneratorSource:
         Генерирует итератор объектов Task со случайными данными.
         :return: Итератор, возвращающий объекты Task.
         """
+        statuses = ["NEW", "IN_PROGRESS", "COMPLETED"]
         for _ in range(self.count):
             task_id = f'Task_{_}'
+            task_description = f'Auto-generated task №{_}'
+            task_priority = random.randint(1, 100)
+            task_status = random.choice(statuses)
             task_payload = {
                 'time': time.time(),
-                'priority': random.randint(1, 100),
                 'msg': f'Custom random data for task #{_}'
             }
 
-            yield Task(id=task_id, payload=task_payload)
+            yield Task(
+                id=task_id,
+                description=task_description,
+                priority=task_priority,
+                status=task_status,
+                payload=task_payload
+            )
 
 
 class FileSource:
@@ -51,10 +60,16 @@ class FileSource:
         """
         tasks = []
         try:
-            with open(self.path, "r") as file:
+            with open(self.path, "r", encoding="utf-8") as file:
                 data = json.load(file)
                 for task in data:
-                    tasks.append(Task(id=task["id"], payload=task["payload"]))
+                    tasks.append(Task(
+                        id=task["id"],
+                        description=task.get("description", "Standard task description here."),
+                        priority=task.get("priority", 1),
+                        status=task.get("status", "NEW"),
+                        payload=task.get("payload")
+                    ))
         except (json.JSONDecodeError, FileNotFoundError, PermissionError) as e:
             LoggingManager.logger.error(f'An error occured while parsing tasks from {self.path}: {e}')
         return tasks
@@ -73,9 +88,12 @@ class ApiSource:
         self.endpoint = endpoint
         self.retries = retries
         self.server_data = [
-            {"id": "API_1", "payload": {"type": "Critical", "msg": "System Reboot"}},
-            {"id": "API_2", "payload": {"type": "Info", "msg": "Update Available"}},
-            {"id": "API_3", "payload": {"type": "Warning", "msg": "Low Disk Space"}},
+            {"id": "API_1", "description": "Reloading a server", "priority": 100, "status": "NEW",
+             "payload": {"type": "Critical"}},
+            {"id": "API_2", "description": "Update packets", "priority": 50, "status": "NEW",
+             "payload": {"type": "Info"}},
+            {"id": "API_3", "description": "Clearing cache", "priority": 10, "status": "NEW",
+             "payload": {"type": "Warning"}},
         ]
 
     def simulate_server_delay(self):
@@ -95,8 +113,13 @@ class ApiSource:
         self.simulate_server_delay()
 
         tasks = []
-        for task in self.server_data:
-            task = Task(id=task["id"], payload=task["payload"])
-            tasks.append(task)
+        for task_data in self.server_data:
+            tasks.append(Task(
+                id=task_data["id"],
+                description=task_data["description"],
+                priority=task_data.get("priority", 1),
+                status=task_data.get("status", "NEW"),
+                payload=task_data.get("payload")
+            ))
 
         return tasks
