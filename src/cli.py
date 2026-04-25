@@ -1,7 +1,9 @@
 import importlib.util
 import os
+from typing import Any
 from src.logging_tools.log_manager import LoggingManager
 from src.classes.validator import TaskSourceValidator
+from src.classes.queue import TaskQueue
 
 class ConsoleInterface:
     """
@@ -12,16 +14,15 @@ class ConsoleInterface:
     def __init__(self):
         """
         Инициализирует консольный интерфейс.
-        Создает экземпляр валидатора и пустой словарик для хранения задач.
+        Создает экземпляр валидатора и словарь для хранения очередей задач.
         """
         self.validator = TaskSourceValidator()
-        self.tasks_cache = {}
+        self.queues: dict[Any, TaskQueue] = {}
 
     def _handle_error(self, message: str) -> None:
         """
         Обрабатывает некоторые ошибки: записывает сообщение в лог и выводит его в консоль.
         :param message: Текст сообщения об ошибке.
-        :return: Данная функция ничего не возвращает.
         """
         LoggingManager.logger.error(message)
         print(message)
@@ -57,8 +58,7 @@ class ConsoleInterface:
 
                 for s in sources_list:
                     if self.validator.verify(s):
-                        tasks = self.validator.fetch_and_display(s)
-                        self.tasks_cache[s] = tasks
+                        self.queues[s] = TaskQueue(s)
 
                 if self.validator.validated_sources:
                     return True
@@ -69,13 +69,16 @@ class ConsoleInterface:
 
         return False
 
-    def _display_cached_source(self):
+    def _process_queue_interactive(self):
         """
-        Вспомогательный метод для выбора одного конкретного источника и вывода его задач.
-        Использует данные из кэша, не инициируя новый процесс сбора задач.
-        :return: Данная функция ничего не возвращает.
+        Интерактивное меню для работы с конкретной ленивой очередью.
         """
         sources = self.validator.validated_sources
+        if not sources:
+            print("No valid sources loaded.")
+            return
+
+        print("\n--- Select Source ---")
         for i, src in enumerate(sources, 1):
             print(f"{i} - {src.__class__.__name__}")
 
@@ -83,24 +86,51 @@ class ConsoleInterface:
             idx = int(idx_in) - 1
             if 0 <= idx < len(sources):
                 src = sources[idx]
-                tasks = self.tasks_cache.get(src, [])
-                print(f"\nTasks {src.__class__.__name__}:")
-                for t in tasks:
-                    print(f"  {t}")
+                queue = self.queues[src]
+
+                print(f"\n--- Processing TaskQueue for {src.__class__.__name__} ---")
+                print("1 - Iterate all tasks")
+                print("2 - Filter by status (e.g., NEW, IN_PROGRESS)")
+                print("3 - Filter by priority (>= value)")
+                print("4 - Get 'ready' tasks")
+
+                op = input("Choose operation: ").strip()
+
+                gen = None
+                if op == "1":
+                    gen = iter(queue)
+                elif op == "2":
+                    st = input("Enter status: ").strip()
+                    gen = queue.filter_by_status(st)
+                elif op == "3":
+                    try:
+                        p = int(input("Enter min priority: ").strip())
+                        gen = queue.filter_by_priority(p)
+                    except ValueError:
+                        print("Invalid priority.")
+                        return
+                elif op == "4":
+                    gen = queue.get_ready_tasks()
+                else:
+                    print("Invalid operation.")
+                    return
+
+                print("\nResults:")
+                for t in gen:
+                    print(f"  {t.summary} | Payload: {t.payload}")
                 return
         print("Input error.")
 
     def run_menu(self):
         """
         Запускает главный цикл интерактивного меню для работы с загруженными данными.
-        Позволяет просматривать список источников и их задачи из кэша.
-        :return: Данная функция ничего не возвращает.
+        Позволяет просматривать список источников и работать с их очередями.
         """
         menu_text = (
             "\n--- MENU ---"
-            "\n1 - List of valid parsed sources"
-            "\n2 - Tasks from all sources"
-            "\n3 - Tasks from a specific source"
+            "\n1 - List of valid sources"
+            "\n2 - Display tasks from all sources"
+            "\n3 - Process specific source (filters & iteration)"
             "\n0 - Exit\n"
         )
 
@@ -110,13 +140,13 @@ class ConsoleInterface:
                     print(f"{i}. {src.__class__.__name__}")
 
             elif choice == "2":
-                for src, tasks in self.tasks_cache.items():
+                for src, queue in self.queues.items():
                     print(f"\nSource: {src.__class__.__name__}")
-                    for t in tasks:
-                        print(f"  {t}")
+                    for t in queue:
+                        print(f"  {t.summary}")
 
             elif choice == "3":
-                self._display_cached_source()
+                self._process_queue_interactive()
 
             else:
                 self._handle_error(f"Incorrect input: {choice}")
